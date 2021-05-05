@@ -8,6 +8,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -30,6 +31,7 @@ import androidx.work.Data;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.Operation;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
@@ -85,8 +87,8 @@ public class MainActivity extends AppCompatActivity {
             public void performClick (String distID,String emailID,String pinValue,String only18Plus,String intervalValue,String districtName) throws ExecutionException, InterruptedException {
 
                 long intervalInLong = Long.valueOf(intervalValue);
-                if(intervalInLong <= 900){
-                    intervalInLong = 900;
+                if(intervalInLong <= 1800){
+                    intervalInLong = 1800;
                 }
 
                 cancelAllWorkers();
@@ -125,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
                         .build();
 
 
-                WorkManager.getInstance().enqueueUniquePeriodicWork(workerTag,ExistingPeriodicWorkPolicy.REPLACE,periodicWorkRequest);
+                Operation workOperation = WorkManager.getInstance().enqueueUniquePeriodicWork(workerTag,ExistingPeriodicWorkPolicy.REPLACE,periodicWorkRequest);
 
                 updateJobCount(workersCount(),null);
                 updateSearchDetails(MyWorker.pinValueString,MyWorker.districtNameValue,MyWorker.intervalValueString);
@@ -259,10 +261,10 @@ public class MainActivity extends AppCompatActivity {
         MyWorker.availableCount =0;
         MyWorker.notAvailableCount =0;
         MyWorker.tryCount =0;
-        MyWorker.stopFlag = true;
         MyWorker.pinValueString = null;
         MyWorker.districtNameValue = null;
         MyWorker.intervalValueString = null;
         ((NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
+        getSharedPreferences("VaccineNotifier",Context.MODE_PRIVATE).edit().putLong("tryCount",0).commit();
     }
 }

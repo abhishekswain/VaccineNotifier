@@ -1,20 +1,15 @@
 package com.abhishek.vaccinenotifier;
 
-import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
-import android.util.Log;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -22,8 +17,6 @@ import androidx.core.app.NotificationCompat;
 
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
-
-import java.util.concurrent.ExecutionException;
 
 public class MyWorker extends Worker {
 
@@ -45,13 +38,13 @@ public class MyWorker extends Worker {
     public static int availableCount;
     public static int notAvailableCount;
     public static long tryCount;
-    public static boolean stopFlag = false;
 
     String NOTIFICATION_CHANNEL_ID = "my_channel_id_01";
     NotificationCompat.Builder notificationBuilder;
     NotificationManager notificationManager;
-
     CovidDataService covidDataService;
+    SharedPreferences sharedPreferences;
+
 
     public MyWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
 
@@ -60,8 +53,8 @@ public class MyWorker extends Worker {
         covidDataService = new CovidDataService(mContext);
         notificationBuilder = new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID);
         notificationManager = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+        sharedPreferences = mContext.getSharedPreferences("VaccineNotifier",Context.MODE_PRIVATE);
         displayNotification("Vaccine availability information!", "Watch out this space for vaccine availability status", getInputData().getInt(this.notificationID, 1), false);
-
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -71,12 +64,23 @@ public class MyWorker extends Worker {
 
         try {
             int intervalNum = Integer.valueOf(getInputData().getString(this.intervalValue));
-            stopFlag = false;
 
-            int loopCount = intervalNum>=900 ? 1: 900/intervalNum;
+            if(0 != sharedPreferences.getLong("tryCount",0)){
+                tryCount = sharedPreferences.getLong("tryCount",0);
+            }
+
+            int loopCount = intervalNum>=1800 ? 1: 1800/intervalNum;
             for(int i=0;i<loopCount;i++) {
 
-                if(stopFlag){
+                tryCount++;
+
+                if(tryCount > 1) {
+                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                    myEdit.putLong("tryCount", tryCount);
+                    myEdit.commit();
+                }
+
+                if(isStopped()){
 
                     notificationManager.cancelAll();
                     return Result.success();
@@ -91,8 +95,6 @@ public class MyWorker extends Worker {
                 districtNameValue = getInputData().getString(this.districtName);
                 pinValueString = pinValue;
                 intervalValueString = intervalValue;
-
-                tryCount++;
 
                 MainActivity.getInstance().updateJobCount(MainActivity.getInstance().workersCount(),null);
                 MainActivity.getInstance().updateSearchDetails(pinValueString,districtNameValue,intervalValueString);
@@ -109,7 +111,15 @@ public class MyWorker extends Worker {
                 }
 
                 if(loopCount > 1) {
-                    Thread.sleep(intervalNum * 1000);
+                    for(int j=0;j<intervalNum*10;j++){
+
+                        if(isStopped()){
+                            notificationManager.cancelAll();
+                            return Result.success();
+                        }
+
+                        Thread.sleep( 100);
+                    }
                 }
             }
         } catch (Exception e) {
