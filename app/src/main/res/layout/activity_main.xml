@@ -1,0 +1,82 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:weightSum="100"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="90"
+        android:orientation="vertical"
+        android:background="#fde200">
+
+        <WebView
+            android:id="@+id/vaccineWeb"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="10"
+        android:orientation="vertical"
+        android:background="@color/white">
+        <LinearLayout
+            android:layout_marginLeft="15dp"
+            android:layout_marginRight="15dp"
+            android:layout_marginBottom="12.5dp"
+            android:layout_marginTop="10dp"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical"
+            android:background="@drawable/layout2_bg"
+            android:gravity="center"
+            android:weightSum="2">
+
+            <TextView
+                android:id="@+id/searchDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="@color/black"
+                android:gravity="center_horizontal"/>
+
+            <TextView
+                android:id="@+id/vaccineStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="@color/black"
+                android:gravity="center_horizontal"/>
+
+            <Button
+                android:id="@+id/stopJobsButton"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:text="Stop Jobs"
+                android:textColor="@color/white"
+                android:layout_marginBottom="0dp"
+                android:backgroundTint="#1c87c9"
+                android:textAllCaps="false"
+                android:textSize="12dp"/>
+
+            <TextView
+                android:id="@+id/moreInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="\nYou will get an app notification on vaccine slot availability.\nClick on the app notification to see the list of available booking slots for your selection."
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="@color/black"
+                android:gravity="center_horizontal"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>

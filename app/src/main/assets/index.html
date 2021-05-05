@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Vaccine Notifier</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+    <style>
+	html,
+	body {
+		margin-left: 15px;
+		margin-right: 15px;
+		margin-top: 15px;
+		display: inline;
+		justify-content: center;
+		height: 100%;
+	}
+
+	body,
+	div,
+	h1,
+	form,
+	input,
+	select,
+	p {
+		padding: 0;
+		margin: 0;
+		outline: none;
+		font-family: Roboto, Arial, sans-serif;
+		font-size: 16px;
+		color: #666;
+	}
+
+	h1 {
+		padding: 10px 0;
+		font-size: 32px;
+		font-weight: 300;
+		text-align: center;
+	}
+
+	p {
+		font-size: 12px;
+	}
+
+	hr {
+		color: #a9a9a9;
+		opacity: 0.3;
+	}
+
+	.main-block {
+		padding: 35px 0;
+		margin: auto;
+		border-radius: 4px;
+		border: solid 1px #ccc;
+		box-shadow: 1px 2px 5px rgba(0, 0, 0, .31);
+		background: #ebebeb;
+	}
+
+	form {
+		margin: 0 30px;
+	}
+
+	.locationChoose,
+	.notificationType {
+		margin: 15px 0;
+	}
+
+	input[type=radio] {
+		display: none;
+	}
+
+	label#icon {
+		margin: 0;
+		border-radius: 5px 0 0 5px;
+	}
+
+	label.radio {
+		position: relative;
+		display: inline-block;
+		padding-top: 4px;
+		margin-right: 20px;
+		text-indent: 30px;
+		overflow: visible;
+		cursor: pointer;
+	}
+
+	label.radio:before {
+		content: "";
+		position: absolute;
+		top: 2px;
+		left: 0;
+		width: 20px;
+		height: 20px;
+		border-radius: 50%;
+		background: #1c87c9;
+	}
+
+	label.radio:after {
+		content: "";
+		position: absolute;
+		width: 9px;
+		height: 4px;
+		top: 8px;
+		left: 4px;
+		border: 3px solid #fff;
+		border-top: none;
+		border-right: none;
+		transform: rotate(-45deg);
+		opacity: 0;
+	}
+
+	input[type=radio]:checked + label:after {
+		opacity: 1;
+	}
+
+	input[type=text]
+	{
+	border-radius: 5px;
+    border: 1px solid #666;
+    width: calc(100% - 2px);
+    height: 30px;
+    margin-top:5px
+	},
+	input[type=password] {
+		width: calc(100% - 57px);
+		height: 36px;
+		margin: 13px 0 0 -5px;
+		padding-left: 10px;
+		border-radius: 0 5px 5px 0;
+		border: solid 1px #cbc9c9;
+		box-shadow: 1px 2px 5px rgba(0, 0, 0, .09);
+		background: #fff;
+	}
+
+	input[type=password] {
+		margin-bottom: 15px;
+	}
+
+	#icon {
+		display: inline-block;
+		padding: 9.3px 15px;
+		box-shadow: 1px 2px 5px rgba(0, 0, 0, .09);
+		background: #1c87c9;
+		color: #fff;
+		text-align: center;
+	}
+
+	.btn-block {
+		margin-top: 10px;
+		text-align: center;
+	}
+
+	button {
+		width: 100%;
+		padding: 10px 0;
+		margin: 10px auto;
+		border-radius: 5px;
+		border: none;
+		background: #1c87c9;
+		font-size: 14px;
+		font-weight: 600;
+		color: #fff;
+	}
+
+	button:hover {
+		background: #26a9e0;
+	}
+	</style>
+    <script type="text/javascript">
+	function PopulateDropDownListStates() {
+		//Build an array containing records.
+		var xhttp = new XMLHttpRequest();
+		xhttp.open("GET", "https://cdn-api.co-vin.in/api/v2/admin/location/states", false);
+		xhttp.send();
+		var states = JSON.parse(xhttp.responseText).states;
+		var statesList = document.getElementById("statesList");
+		//Add the Options to the DropDownList.
+		for(var i = 0; i < states.length; i++) {
+			var option = document.createElement("OPTION");
+			//Set Customer Name in Text part.
+			option.innerHTML = states[i].state_name;
+			//Set CustomerId in Value part.
+			option.value = states[i].state_id;
+			//Add the Option element to DropDownList.
+			statesList.options.add(option);
+		}
+	}
+
+	function PopulateDropDownListDistricts(stateId) {
+		var select = document.getElementById("districtsList");
+		var length = select.options.length;
+		for(i = length - 1; i > 0; i--) {
+			select.options[i] = null;
+		}
+		var value = stateId.value;
+		//Build an array containing records.
+		var xhttp = new XMLHttpRequest();
+		xhttp.open("GET", "https://cdn-api.co-vin.in/api/v2/admin/location/districts/" + value, false);
+		xhttp.send();
+		var districts = JSON.parse(xhttp.responseText).districts;
+		var districtsList = document.getElementById("districtsList");
+		//Add the Options to the DropDownList.
+		for(var i = 0; i < districts.length; i++) {
+			var option = document.createElement("OPTION");
+			//Set Customer Name in Text part.
+			option.innerHTML = districts[i].district_name;
+			//Set CustomerId in Value part.
+			option.value = districts[i].district_id;
+			//Add the Option element to DropDownList.
+			districtsList.options.add(option);
+		}
+	}
+
+	function EnableDisableEmailTextBox(chkbx) {
+		var emailFld = document.getElementById("email");
+		emailFld.disabled = chkbx.checked ? false : true;
+		if(!emailFld.disabled) {
+			emailFld.focus();
+		}
+	}
+
+	function SetDistrictId(districtEle) {
+		window.districtID = districtEle.value;
+		window.districtName = districtEle.options[districtEle.selectedIndex].text
+		document.getElementById('submitBtn').disabled = false;
+	}
+
+	function submitBtnPressed() {
+		var email = document.getElementById("email");
+		var pinValue = document.getElementById("pinField").value;
+		var only18Plus = document.getElementById("radio3").checked;
+		var intervalValue = document.getElementById("intervalField").value;
+		document.getElementById('submitBtn').disabled = true;
+		submitBtnAnd.performClick(window.districtID, email.value, pinValue, only18Plus, intervalValue,window.districtName);
+	}
+	window.addEventListener('load', function() {
+		var checkboxPin = document.getElementById("radioTwo");
+		var checkboxState = document.getElementById("radioOne");
+		var pinField = document.getElementById("pinField");
+		var statesList = document.getElementById("statesList");
+		var districtsList = document.getElementById("districtsList");
+		checkboxPin.addEventListener('change', function() {
+			if(this.checked) {
+				checkboxState.checked = false;
+				checkboxState.disabled = true;
+				statesList.disabled = true;
+				districtsList.disabled = true;
+				pinField.disabled = false;
+			} else {
+				checkboxState.checked = true;
+				checkboxState.disabled = false;
+				statesList.disabled = false;
+				districtsList.disabled = false;
+				pinField.disabled = true;
+				pinField.value = '';
+			}
+		});
+		checkboxState.addEventListener('change', function() {
+			if(this.checked) {
+				checkboxPin.checked = false;
+				checkboxPin.disabled = true;
+				statesList.disabled = false;
+				districtsList.disabled = false;
+				pinField.value = '';
+				pinField.disabled = true;
+			} else {
+				checkboxPin.checked = true;
+				checkboxPin.disabled = false;
+				statesList.disabled = true;
+				districtsList.disabled = true;
+				pinField.disabled = false;
+			}
+		});
+	}, false)
+	</script>
+</head>
+
+<body onload="PopulateDropDownListStates()">
+<div class="main-block">
+    <h1>Vaccine Notifier</h1>
+    <form action="/">
+        <hr>
+        <div class="locationChoose">
+            <input type="checkbox" value="none" id="radioOne" checked/>
+            <label for="radioOne">By State/District</label>
+            <input type="checkbox" value="none" id="radioTwo" />
+            <label for="radioTwo">By Pincode</label>
+            <hr>
+            <input type="checkbox" value="none" id="radio3" />
+            <label for="radio3">Only 18+</label>
+        </div>
+        <hr>
+        <input placeholder="Select 'By Pincode' to Enter PIN Code here." type="text" id="pinField" disabled>
+        <hr>
+        <select id="statesList" onchange="PopulateDropDownListDistricts(this)">
+            <option id="selectState">Select State</option>
+        </select>
+        <hr>
+        <select id="districtsList" onchange="SetDistrictId(this)">
+            <option id="selectDistrict">Select District</option>
+        </select>
+        <hr>
+        <div class="notificationType" hidden>
+            <input type="checkbox" value="none" id="emailNotification" name="emailNotification" onclick="EnableDisableEmailTextBox(this)" checked disabled/>
+            <label for="emailNotification">emailNotification</label>
+            <hr>
+            <input type="email" id="email" name="email" placeholder="Enter your email">
+            <hr>
+            <!--            <input type="checkbox" value="none" id="appNotification" name="appNotification"/>-->
+            <!--            <label for="appNotification">App Notfication</label>-->
+            <hr>  <hr> </div>
+
+        <label>Check interval in seconds. Min:5 Max:900</label>
+        <input placeholder="Enter check interval in seconds" type="text" id="intervalField" value="30">
+        <hr>
+        <div class="btn-block">
+            <button id="submitBtn" type="button" onClick="submitBtnPressed();">Notify me when available</button>
+        </div>
+        <hr>
+<!--        <br style="margin-top: 50px;">-->
+        <p>Made By <a href="https://www.linkedin.com/in/abhishek-swain-82908a58/">Abhishek Swain</a>.</p>
+    </form>
+</div>
+</body>
+
+</html>
