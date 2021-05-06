@@ -1,5 +1,6 @@
 package com.abhishek.vaccinenotifier.activities;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Bundle;
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         return instance;
     }
 
+    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -75,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
             @JavascriptInterface
             public void performClick(String distID, String emailID, String pinValue, String only18Plus, String intervalValue, String districtName) throws ExecutionException, InterruptedException {
 
-                long intervalInLong = Long.valueOf(intervalValue);
+                long intervalInLong = Long.parseLong(intervalValue);
                 if (intervalInLong <= 1800) {
                     intervalInLong = 1800;
                 }
@@ -247,12 +249,10 @@ public class MainActivity extends AppCompatActivity {
         interval = null;
         MyWorker.availableCount = 0;
         MyWorker.notAvailableCount = 0;
+        MyWorker.numOfNotificationOnAvailability = 0;
         MyWorker.tryCount = 0;
-        spUtil.addPUpdateSharedPrefString(MyWorker.pinValueKey, null);
-        spUtil.addPUpdateSharedPrefString(MyWorker.districtNameKey, null);
-        spUtil.addPUpdateSharedPrefString(MyWorker.intervalValueKey, null);
+        spUtil.clearAllPref();
 
         ((NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
-        spUtil.addPUpdateSharedPrefLong("tryCount", 0);
     }
 }

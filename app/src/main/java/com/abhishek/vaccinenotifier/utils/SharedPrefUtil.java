@@ -15,7 +15,7 @@ public class SharedPrefUtil {
         sharedPreferences = mContext.getSharedPreferences(name, Context.MODE_PRIVATE);
     }
 
-    public void addPUpdateSharedPrefLong(String key, long value) {
+    public void addOrUpdateSharedPrefLong(String key, long value) {
 
         myEdit = sharedPreferences.edit();
         myEdit.putLong(key, value);
@@ -23,10 +23,18 @@ public class SharedPrefUtil {
 
     }
 
-    public void addPUpdateSharedPrefString(String key, String value) {
+    public void addOrUpdateSharedPrefString(String key, String value) {
 
         myEdit = sharedPreferences.edit();
         myEdit.putString(key, value);
+        myEdit.commit();
+
+    }
+
+    public void addOrUpdateSharedPrefBoolean(String key, boolean value) {
+
+        myEdit = sharedPreferences.edit();
+        myEdit.putBoolean(key, value);
         myEdit.commit();
 
     }
@@ -38,5 +46,14 @@ public class SharedPrefUtil {
     public long getSharedPrefValueLong(String key) {
 
         return sharedPreferences.getLong(key, 0);
+    }
+
+    public boolean getSharedPrefValueBoolean(String key) {
+
+        return sharedPreferences.getBoolean(key, false);
+    }
+
+    public void clearAllPref() {
+        sharedPreferences.edit().clear().commit();
     }
 }

@@ -35,6 +35,7 @@ public class CovidDataService {
     JSONArray available;
     String htmlFileName = "index.html";
     String filePath;
+    SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
 
     Context mContext;
 
@@ -49,12 +50,11 @@ public class CovidDataService {
     public String checkVaccineAvailability(String distID, String pinValue, String only18Plus, String emailID) {
 
         available = new JSONArray();
-        boolean isOnly18Plus = Boolean.valueOf(only18Plus);
+        boolean isOnly18Plus = Boolean.parseBoolean(only18Plus);
 
         try {
 
             Date date = new Date();
-            SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
 
             String byPin = "calendarByPin?pincode=" + pinValue;
             String byDistrict = "calendarByDistrict?district_id=" + distID;

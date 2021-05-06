@@ -39,12 +39,16 @@ public class MyWorker extends Worker {
     public static String tryCountKey = "tryCount";
     public static String notAvailableCountKey = "notAvailableCount";
     public static String availableCountKey = "availableCount";
+    public static String stateChnagedToAvailableKey = "stateChnagedToAvailable";
 
     public static long availableCount;
     public static long notAvailableCount;
     public static long tryCount;
+    public static int numOfNotificationOnAvailability;
+    private static final int numOfNotificationOnAvailabilityMax = 2;
 
     public static int maxIntervalForloopSec = 1800;
+
 
     String notificationChannelId = "my_channel_id_01";
     String notificationChannelName = "My Notifications";
@@ -52,7 +56,6 @@ public class MyWorker extends Worker {
     NotificationManager notificationManager;
     CovidDataService covidDataService;
     SharedPrefUtil spUtil;
-
 
     public MyWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
 
@@ -99,7 +102,7 @@ public class MyWorker extends Worker {
             for (int i = 0; i < loopCount; i++) {
 
                 tryCount++;
-                spUtil.addPUpdateSharedPrefLong(tryCountKey, tryCount);
+                spUtil.addOrUpdateSharedPrefLong(tryCountKey, tryCount);
 
                 if (isStopped()) {
 
@@ -107,23 +110,12 @@ public class MyWorker extends Worker {
                     return Result.success();
                 }
 
-                spUtil.addPUpdateSharedPrefString(pinValueKey, pinValue);
-                spUtil.addPUpdateSharedPrefString(intervalValueKey, intervalValue);
-                spUtil.addPUpdateSharedPrefString(districtNameKey, districtName);
+                spUtil.addOrUpdateSharedPrefString(pinValueKey, pinValue);
+                spUtil.addOrUpdateSharedPrefString(intervalValueKey, intervalValue);
+                spUtil.addOrUpdateSharedPrefString(districtNameKey, districtName);
 
                 MainActivity.getInstance().updateJobCount(MainActivity.getInstance().workersCount(), null);
                 MainActivity.getInstance().updateSearchDetails(spUtil.getSharedPrefValueString(pinValueKey), spUtil.getSharedPrefValueString(districtNameKey), spUtil.getSharedPrefValueString(intervalValueKey));
-
-                String dataFilePath = covidDataService.checkVaccineAvailability(distID, pinValue, only18Plus, emailID);
-                if (!dataFilePath.equals(CovidDataService.notAvailable)) {
-                    notAvailableCount++;
-                    spUtil.addPUpdateSharedPrefLong(notAvailableCountKey, notAvailableCount);
-                    setForegroundAsync(displayNotification("Vaccine Available!", "Vaccine booking slot(s) available, Click to know more!", notificationId));
-                } else {
-                    availableCount++;
-                    spUtil.addPUpdateSharedPrefLong(availableCountKey, availableCount);
-                    setForegroundAsync(displayNotification("Vaccine slots are not available yet for your selection!", "This notification will be updated once available.", notificationId));
-                }
 
                 if (loopCount > 1) {
                     for (int j = 0; j < intervalNum * 10; j++) {
@@ -135,6 +127,22 @@ public class MyWorker extends Worker {
 
                         Thread.sleep(100);
                     }
+                }
+
+                String dataFilePath = covidDataService.checkVaccineAvailability(distID, pinValue, only18Plus, emailID);
+                if (dataFilePath.equals(CovidDataService.notAvailable)) {
+
+                    notAvailableCount++;
+                    spUtil.addOrUpdateSharedPrefLong(notAvailableCountKey, notAvailableCount);
+                    spUtil.addOrUpdateSharedPrefBoolean(stateChnagedToAvailableKey, false);
+                    setForegroundAsync(displayNotification("Vaccine slots are not available yet for your selection!", "This notification will be updated once available.", notificationId));
+
+                } else {
+
+                    availableCount++;
+                    spUtil.addOrUpdateSharedPrefLong(availableCountKey, availableCount);
+                    spUtil.addOrUpdateSharedPrefBoolean(stateChnagedToAvailableKey, true);
+                    setForegroundAsync(displayNotification("Vaccine Available!", "Vaccine booking slot(s) available, Click to know more!", notificationId));
                 }
             }
         } catch (Exception e) {
@@ -148,55 +156,55 @@ public class MyWorker extends Worker {
 
     private ForegroundInfo displayNotification(String title, String text, int id) {
 
-        boolean silentUpdateonNextMsg = false;
+        boolean isSilentUpdate = false;
 
-        if((spUtil.getSharedPrefValueLong(notAvailableCountKey) <= 1 )|| (spUtil.getSharedPrefValueLong(availableCountKey) <= 2)){
-            silentUpdateonNextMsg = true;
+        if ((spUtil.getSharedPrefValueLong(notAvailableCountKey) > 1)) {
+            isSilentUpdate = true;
+            numOfNotificationOnAvailability = 0;
         }
 
+        if (spUtil.getSharedPrefValueBoolean(stateChnagedToAvailableKey)) {
+            if (numOfNotificationOnAvailability < numOfNotificationOnAvailabilityMax) {
+                isSilentUpdate = false;
+            } else {
+                isSilentUpdate = true;
+            }
+
+            numOfNotificationOnAvailability++;
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel notificationChannel = new NotificationChannel(notificationChannelId, this.notificationChannelName, NotificationManager.IMPORTANCE_HIGH);
+            NotificationChannel notificationChannel = new NotificationChannel(notificationChannelId, notificationChannelName, NotificationManager.IMPORTANCE_HIGH);
 
             // Configure the notification channel.
-            notificationChannel.setDescription("Channel description");
-
+            notificationChannel.setDescription("VaccineNotifier");
             notificationChannel.enableLights(true);
             notificationChannel.setLightColor(Color.RED);
-            notificationChannel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
+            notificationChannel.setVibrationPattern(new long[]{1000});
 
             notificationManager.createNotificationChannel(notificationChannel);
         }
 
-        notificationBuilder = null;
-        notificationBuilder = new NotificationCompat.Builder(mContext, notificationChannelId);
-
-        if (silentUpdateonNextMsg) {
-
-            notificationBuilder.setOnlyAlertOnce(true);
-        }
+        Intent notificationIntent = new Intent(mContext, NotificationActivity.class);
+        PendingIntent conPendingIntent = PendingIntent.getActivity(mContext, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         notificationBuilder.setAutoCancel(false)
-                .setDefaults(Notification.DEFAULT_ALL)
+                .setSilent(isSilentUpdate)
+                //.setDefaults(Notification.DEFAULT_ALL)
                 .setWhen(System.currentTimeMillis())
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setLargeIcon(BitmapFactory.decodeResource(mContext.getResources(),
                         R.mipmap.ic_launcher))
-                .setTicker("Hearty365")
+                .setTicker("VaccineNotifier")
                 .setPriority(Notification.PRIORITY_MAX)
                 .setContentTitle(title)
-                .setContentText(text + "  (" + MyWorker.tryCount + ")")
-                .setContentInfo("Info");
+                .setContentText(text + "  (" + spUtil.getSharedPrefValueLong(tryCountKey) + ")")
+                .setContentInfo("VaccineNotifier")
+                .setOngoing(true)
+                .setContentIntent(conPendingIntent);
 
-
-        Intent notificationIntent = new Intent(mContext, NotificationActivity.class);
-        PendingIntent conPendingIntent = PendingIntent.getActivity(mContext, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        notificationBuilder.setContentIntent(conPendingIntent);
-        notificationBuilder.setOngoing(true);
         Notification notification = notificationBuilder.build();
         notificationManager.notify(/*notification id*/id, notification);
-
 
         return new ForegroundInfo(id, notification);
     }

@@ -168,6 +168,7 @@
 		background: #26a9e0;
 	}
 
+
     </style>
     <script type="text/javascript">
 	function PopulateDropDownListStates() {
@@ -233,8 +234,13 @@
 		var pinValue = document.getElementById("pinField").value;
 		var only18Plus = document.getElementById("radio3").checked;
 		var intervalValue = document.getElementById("intervalField").value;
-		document.getElementById('submitBtn').disabled = true;
+		var submitButton = document.getElementById('submitBtn');
+		submitButton.disabled = true;
 		submitBtnAnd.performClick(window.districtID, email.value, pinValue, only18Plus, intervalValue,window.districtName);
+
+		setTimeout(function() {
+                submitButton.disabled = false;
+            }, 2000);
 	}
 	window.addEventListener('load', function() {
 		var checkboxPin = document.getElementById("radioTwo");
@@ -275,6 +281,7 @@
 			}
 		});
 	}, false)
+
 
     </script>
 </head>
