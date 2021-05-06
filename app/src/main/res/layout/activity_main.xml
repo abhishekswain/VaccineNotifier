@@ -1,5 +1,4 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:weightSum="100"
@@ -15,7 +14,7 @@
         <WebView
             android:id="@+id/vaccineWeb"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent" />
 
     </LinearLayout>
 
@@ -25,6 +24,7 @@
         android:layout_weight="10"
         android:orientation="vertical"
         android:background="@color/white">
+
         <LinearLayout
             android:layout_marginLeft="15dp"
             android:layout_marginRight="15dp"
@@ -44,7 +44,7 @@
                 android:textAlignment="center"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textColor="@color/black"
-                android:gravity="center_horizontal"/>
+                android:gravity="center_horizontal" />
 
             <TextView
                 android:id="@+id/vaccineStatus"
@@ -53,7 +53,7 @@
                 android:textAlignment="center"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textColor="@color/black"
-                android:gravity="center_horizontal"/>
+                android:gravity="center_horizontal" />
 
             <Button
                 android:id="@+id/stopJobsButton"
@@ -64,7 +64,7 @@
                 android:layout_marginBottom="0dp"
                 android:backgroundTint="#1c87c9"
                 android:textAllCaps="false"
-                android:textSize="12dp"/>
+                android:textSize="12dp" />
 
             <TextView
                 android:id="@+id/moreInfo"
@@ -74,7 +74,7 @@
                 android:text="\nYou will get an app notification on vaccine slot availability.\nClick on the app notification to see the list of available booking slots for your selection."
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textColor="@color/black"
-                android:gravity="center_horizontal"/>
+                android:gravity="center_horizontal" />
 
         </LinearLayout>
 

@@ -1,4 +1,4 @@
-package com.abhishek.vaccinenotifier;
+package com.abhishek.vaccinenotifier.utils;
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,12 +16,6 @@ package com.abhishek.vaccinenotifier;
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-/**
- * @author Alexander Y. Kleymenov
- * @version $Revision$
- */
-
 
 import java.security.AccessController;
 import java.security.Provider;

@@ -4,7 +4,9 @@
 <head>
     <title>Vaccine Notifier</title>
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css"
+          integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz"
+          crossorigin="anonymous">
     <style>
 	html,
 	body {
@@ -48,7 +50,7 @@
 	}
 
 	.main-block {
-		padding: 35px 0;
+		padding: 30px 0;
 		margin: auto;
 		border-radius: 4px;
 		border: solid 1px #ccc;
@@ -165,7 +167,8 @@
 	button:hover {
 		background: #26a9e0;
 	}
-	</style>
+
+    </style>
     <script type="text/javascript">
 	function PopulateDropDownListStates() {
 		//Build an array containing records.
@@ -272,7 +275,8 @@
 			}
 		});
 	}, false)
-	</script>
+
+    </script>
 </head>
 
 <body onload="PopulateDropDownListStates()">
@@ -283,14 +287,15 @@
         <div class="locationChoose">
             <input type="checkbox" value="none" id="radioOne" checked/>
             <label for="radioOne">By State/District</label>
-            <input type="checkbox" value="none" id="radioTwo" />
+            <input type="checkbox" value="none" id="radioTwo"/>
             <label for="radioTwo">By Pincode</label>
             <hr>
-            <input type="checkbox" value="none" id="radio3" />
+            <input type="checkbox" value="none" id="radio3"/>
             <label for="radio3">Only 18+</label>
         </div>
         <hr>
-        <input placeholder="Select 'By Pincode' to Enter PIN Code here." type="text" id="pinField" disabled>
+        <input placeholder="Select 'By Pincode' to Enter PIN Code here." type="text" id="pinField"
+               disabled>
         <hr>
         <select id="statesList" onchange="PopulateDropDownListDistricts(this)">
             <option id="selectState">Select State</option>
@@ -301,24 +306,31 @@
         </select>
         <hr>
         <div class="notificationType" hidden>
-            <input type="checkbox" value="none" id="emailNotification" name="emailNotification" onclick="EnableDisableEmailTextBox(this)" checked disabled/>
+            <input type="checkbox" value="none" id="emailNotification" name="emailNotification"
+                   onclick="EnableDisableEmailTextBox(this)" checked disabled/>
             <label for="emailNotification">emailNotification</label>
             <hr>
             <input type="email" id="email" name="email" placeholder="Enter your email">
             <hr>
             <!--            <input type="checkbox" value="none" id="appNotification" name="appNotification"/>-->
             <!--            <label for="appNotification">App Notfication</label>-->
-            <hr>  <hr> </div>
+            <hr>
+            <hr>
+        </div>
 
-        <label>Check interval in seconds. Min:5 Max:900</label>
-        <input placeholder="Enter check interval in seconds" type="text" id="intervalField" value="30">
+        <label>Poll interval in seconds.\nRecommended - Min:10 Max:3600</label>
+        <input placeholder="Enter check interval in seconds" type="text" id="intervalField"
+               value="30">
         <hr>
         <div class="btn-block">
-            <button id="submitBtn" type="button" onClick="submitBtnPressed();">Notify me when available</button>
+            <button id="submitBtn" type="button" onClick="submitBtnPressed();">Notify me when
+                available
+            </button>
         </div>
         <hr>
-<!--        <br style="margin-top: 50px;">-->
-        <p>Made By <a href="https://www.linkedin.com/in/abhishek-swain-82908a58/">Abhishek Swain</a>.</p>
+        <!--        <br style="margin-top: 50px;">-->
+        <p>Made By <a href="https://www.linkedin.com/in/abhishek-swain-82908a58/">Abhishek Swain</a>.
+        </p>
     </form>
 </div>
 </body>

@@ -1,4 +1,4 @@
-package com.abhishek.vaccinenotifier;
+package com.abhishek.vaccinenotifier.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -49,7 +49,7 @@ public class GMailSender extends javax.mail.Authenticator {
     }
 
     public synchronized void sendMail(String subject, String body, String sender, String recipients) throws Exception {
-        try{
+        try {
             MimeMessage message = new MimeMessage(session);
             DataHandler handler = new DataHandler((DataSource) new ByteArrayDataSource(body.getBytes(), "text/html; charset=utf-8"));
             message.setSender(new InternetAddress(sender));
@@ -60,7 +60,7 @@ public class GMailSender extends javax.mail.Authenticator {
             else
                 message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipients));
             Transport.send(message);
-        }catch(Exception e){
+        } catch (Exception e) {
 
         }
     }

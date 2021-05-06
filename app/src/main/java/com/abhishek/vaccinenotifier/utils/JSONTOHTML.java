@@ -1,4 +1,4 @@
-package com.abhishek.vaccinenotifier;
+package com.abhishek.vaccinenotifier.utils;
 
 import android.os.Build;
 
@@ -17,8 +17,8 @@ public class JSONTOHTML {
      * Get the JSON data formated in HTML
      */
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public static String getHtmlData(String strJsonData ) throws JSONException {
-        return jsonToHtml( new JSONArray( strJsonData ) );
+    public static String getHtmlData(String strJsonData) throws JSONException {
+        return jsonToHtml(new JSONArray(strJsonData));
     }
 
     /**
@@ -28,12 +28,12 @@ public class JSONTOHTML {
      * @return string
      */
     @RequiresApi(api = Build.VERSION_CODES.N)
-    private static String jsonToHtml(Object obj ) {
-        StringBuilder html = new StringBuilder( );
+    private static String jsonToHtml(Object obj) {
+        StringBuilder html = new StringBuilder();
 
         try {
             if (obj instanceof JSONObject) {
-                JSONObject jsonObject = (JSONObject)obj;
+                JSONObject jsonObject = (JSONObject) obj;
 
                 List<String> list = new ArrayList<String>();
                 jsonObject.keys().forEachRemaining(list::add);
@@ -49,7 +49,7 @@ public class JSONTOHTML {
 
                         Object val = jsonObject.get(key.toString());
                         // recursive call
-                        html.append( jsonToHtml( val ) );
+                        html.append(jsonToHtml(val));
                         // close the div
                         html.append("</div>");
                     }
@@ -58,17 +58,19 @@ public class JSONTOHTML {
                 html.append("</div>");
 
             } else if (obj instanceof JSONArray) {
-                JSONArray array = (JSONArray)obj;
-                for ( int i=0; i < array.length( ); i++) {
+                JSONArray array = (JSONArray) obj;
+                for (int i = 0; i < array.length(); i++) {
                     // recursive call
-                    html.append( jsonToHtml( array.get(i) ) );
+                    html.append(jsonToHtml(array.get(i)));
                 }
             } else {
                 // print the value
-                html.append( obj );
+                html.append(obj);
             }
-        } catch (JSONException e) { return e.getLocalizedMessage( ) ; }
+        } catch (JSONException e) {
+            return e.getLocalizedMessage();
+        }
 
-        return html.toString( );
+        return html.toString();
     }
 }

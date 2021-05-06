@@ -1,42 +1,28 @@
-package com.abhishek.vaccinenotifier;
+package com.abhishek.vaccinenotifier.activities;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.lifecycle.LiveData;
 import androidx.work.BackoffPolicy;
 import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.Operation;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import com.abhishek.vaccinenotifier.R;
+import com.abhishek.vaccinenotifier.utils.SharedPrefUtil;
+import com.abhishek.vaccinenotifier.workers.MyWorker;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -55,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     public static String distName;
     public static String interval;
     private static MainActivity instance;
+    SharedPrefUtil spUtil;
 
     public static MainActivity getInstance() {
         return instance;
@@ -69,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
 
         instance = this;
 
+        spUtil = new SharedPrefUtil(this, getApplicationContext().getPackageName());
+
         mWebView = (WebView) findViewById(R.id.vaccineWeb);
         mWebView.setInitialScale(0);
 
@@ -82,19 +71,19 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setLoadWithOverviewMode(true);
 
 
-        mWebView.addJavascriptInterface( new Object() {
+        mWebView.addJavascriptInterface(new Object() {
             @JavascriptInterface
-            public void performClick (String distID,String emailID,String pinValue,String only18Plus,String intervalValue,String districtName) throws ExecutionException, InterruptedException {
+            public void performClick(String distID, String emailID, String pinValue, String only18Plus, String intervalValue, String districtName) throws ExecutionException, InterruptedException {
 
                 long intervalInLong = Long.valueOf(intervalValue);
-                if(intervalInLong <= 1800){
+                if (intervalInLong <= 1800) {
                     intervalInLong = 1800;
                 }
 
                 cancelAllWorkers();
 
                 mpinValue = pinValue;
-                if(null == pinValue || pinValue.toString().equals("")){
+                if (null == pinValue || pinValue.toString().equals("")) {
                     mpinValue = defaultPin;
                 }
 
@@ -105,13 +94,13 @@ public class MainActivity extends AppCompatActivity {
                 //to pass the data with workRequest
                 //we can put as many variables needed
                 Data inputData = new Data.Builder()
-                        .putString(MyWorker.distID, distID)
-                        .putString(MyWorker.emailID, emailID)
-                        .putString(MyWorker.pinValue, mpinValue)
-                        .putString(MyWorker.only18Plus, only18Plus)
-                        .putString(MyWorker.intervalValue,intervalValue)
-                        .putString(MyWorker.districtName,districtName)
-                        .putInt(MyWorker.notificationID, 1)
+                        .putString(MyWorker.distIDKey, distID)
+                        .putString(MyWorker.emailIDKey, emailID)
+                        .putString(MyWorker.pinValueKey, mpinValue)
+                        .putString(MyWorker.only18PlusKey, only18Plus)
+                        .putString(MyWorker.intervalValueKey, intervalValue)
+                        .putString(MyWorker.districtNameKey, districtName)
+                        .putInt(MyWorker.notificationIDKey, 1)
                         .build();
 
                 Constraints constraints = new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build();
@@ -123,21 +112,22 @@ public class MainActivity extends AppCompatActivity {
                         .addTag(workerTag)
                         // setting a backoff on case the work needs to retry
                         //PeriodicWorkRequest.MIN_BACKOFF_MILLIS
-                        .setBackoffCriteria(BackoffPolicy.LINEAR,30 , TimeUnit.SECONDS)
+                        .setBackoffCriteria(BackoffPolicy.LINEAR, 30, TimeUnit.SECONDS)
+                        //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                         .build();
 
+                WorkManager.getInstance(getInstance()).enqueueUniquePeriodicWork(workerTag, ExistingPeriodicWorkPolicy.REPLACE, periodicWorkRequest);
 
-                Operation workOperation = WorkManager.getInstance().enqueueUniquePeriodicWork(workerTag,ExistingPeriodicWorkPolicy.REPLACE,periodicWorkRequest);
-
-                updateJobCount(workersCount(),null);
-                updateSearchDetails(MyWorker.pinValueString,MyWorker.districtNameValue,MyWorker.intervalValueString);
+                updateJobCount(workersCount(), null);
+                updateSearchDetails(spUtil.getSharedPrefValueString(MyWorker.pinValueKey), spUtil.getSharedPrefValueString(MyWorker.districtNameKey), spUtil.getSharedPrefValueString(MyWorker.intervalValueKey));
 
             }
-        } , "submitBtnAnd" );
+        }, "submitBtnAnd");
+
 
         mWebView.loadUrl("file:///android_asset/index.html");
         try {
-            updateSearchDetails(MyWorker.pinValueString,MyWorker.districtNameValue,MyWorker.intervalValueString);
+            updateSearchDetails(spUtil.getSharedPrefValueString(MyWorker.pinValueKey), spUtil.getSharedPrefValueString(MyWorker.districtNameKey), spUtil.getSharedPrefValueString(MyWorker.intervalValueKey));
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -145,13 +135,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            updateJobCount(workersCount(),null);
+            updateJobCount(workersCount(), null);
         } catch (ExecutionException e) {
             e.printStackTrace();
-            updateJobCount(0,"Error!");
+            updateJobCount(0, "Error!");
         } catch (InterruptedException e) {
             e.printStackTrace();
-            updateJobCount(0,"Error!");
+            updateJobCount(0, "Error!");
         }
 
         stopJobsButton.setOnClickListener(new View.OnClickListener() {
@@ -167,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
                 searchDetails.setText("No search active");
 
                 try {
-                    updateJobCount(workersCount(),null);
+                    updateJobCount(workersCount(), null);
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -189,9 +179,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public int workersCount() throws ExecutionException, InterruptedException {
-        int workerCount =0;
-        if(null != WorkManager.getInstance().getWorkInfosByTag(MyWorker.class.getName()).get()) {
-            List<WorkInfo> workInfoList = WorkManager.getInstance().getWorkInfosByTag(MyWorker.class.getName()).get();
+        int workerCount = 0;
+        if (null != WorkManager.getInstance(getInstance()).getWorkInfosByTag(MyWorker.class.getName()).get()) {
+            List<WorkInfo> workInfoList = WorkManager.getInstance(getInstance()).getWorkInfosByTag(MyWorker.class.getName()).get();
             for (WorkInfo workInfo : workInfoList) {
                 WorkInfo.State state = workInfo.getState();
                 workerCount++;
@@ -201,22 +191,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void cancelAllWorkers() throws ExecutionException, InterruptedException {
-        WorkManager.getInstance().cancelAllWork();
-        WorkManager.getInstance().pruneWork();
+        WorkManager.getInstance(getInstance()).cancelAllWork();
+        WorkManager.getInstance(getInstance()).pruneWork();
         cleanData();
     }
 
-    public void updateJobCount(int count,String message){
-        if(null != message){
-            checkStatus.setText("Jobs Running: "+message);
-        }
-        else{
+    public void updateJobCount(int count, String message) {
+        if (null != message) {
+            checkStatus.setText("Jobs Running: " + message);
+        } else {
             runOnUiThread(new Runnable() {
 
                 @Override
                 public void run() {
 
-                    checkStatus.setText("Jobs Running: "+count+"\nI have checked for "+ MyWorker.tryCount +" times since you've scheduled me.");
+                    checkStatus.setText("Jobs Running: " + count + "\nI have checked for " + spUtil.getSharedPrefValueLong(MyWorker.tryCountKey) + " times since you've scheduled me.");
 
                 }
             });
@@ -224,22 +213,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void updateSearchDetails(String pin,String dist,String interval) throws ExecutionException, InterruptedException {
+    public void updateSearchDetails(String pin, String dist, String interval) throws ExecutionException, InterruptedException {
 
         String text;
-        if(null == pin){
-            if(workersCount() ==0) {
+        if (null == pin) {
+            if (workersCount() == 0) {
                 text = "No search active";
+            } else {
+                String temp = (null == spUtil.getSharedPrefValueString(MyWorker.pinValueKey)) ? "District: " + spUtil.getSharedPrefValueString(MyWorker.districtNameKey) : "PIN: " + spUtil.getSharedPrefValueString(MyWorker.pinValueKey);
+                temp = (null == spUtil.getSharedPrefValueString(MyWorker.pinValueKey) && null == spUtil.getSharedPrefValueString(MyWorker.districtNameKey) && null == spUtil.getSharedPrefValueString(MyWorker.intervalValueKey)) ? "'Updating..'" : temp;
+                text = (null == spUtil.getSharedPrefValueString(MyWorker.intervalValueKey)) ? "Search active for " + temp + ", Interval: 'Updating..'" : "Search active for " + temp + ", Interval: " + interval + " seconds";
             }
-            else{
-                String temp = (null ==MyWorker.pinValueString) ? "District: " + MyWorker.districtNameValue: "PIN: " + MyWorker.pinValueString;
-                temp = (null == MyWorker.pinValueString && null == MyWorker.districtNameValue && null == MyWorker.intervalValueString) ? "'Updating..'" : temp;
-                text = (null == MyWorker.intervalValueString)? "Search active for "+temp+", Interval: 'Updating..'":"Search active for "+temp+", Interval: "+interval+" seconds";
-            }
-        }
-        else {
+        } else {
             text = defaultPin.equals(pin) ? "District: " + dist : "PIN: " + pin;
-            text = "Search active for "+text+", Interval: "+interval+" seconds";
+            text = "Search active for " + text + ", Interval: " + interval + " seconds";
         }
 
         String finalText = text;
@@ -258,13 +245,14 @@ public class MainActivity extends AppCompatActivity {
         mpinValue = null;
         distName = null;
         interval = null;
-        MyWorker.availableCount =0;
-        MyWorker.notAvailableCount =0;
-        MyWorker.tryCount =0;
-        MyWorker.pinValueString = null;
-        MyWorker.districtNameValue = null;
-        MyWorker.intervalValueString = null;
+        MyWorker.availableCount = 0;
+        MyWorker.notAvailableCount = 0;
+        MyWorker.tryCount = 0;
+        spUtil.addPUpdateSharedPrefString(MyWorker.pinValueKey, null);
+        spUtil.addPUpdateSharedPrefString(MyWorker.districtNameKey, null);
+        spUtil.addPUpdateSharedPrefString(MyWorker.intervalValueKey, null);
+
         ((NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
-        getSharedPreferences("VaccineNotifier",Context.MODE_PRIVATE).edit().putLong("tryCount",0).commit();
+        spUtil.addPUpdateSharedPrefLong("tryCount", 0);
     }
 }

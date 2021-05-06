@@ -1,9 +1,11 @@
-package com.abhishek.vaccinenotifier;
+package com.abhishek.vaccinenotifier.activities;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+
+import com.abhishek.vaccinenotifier.R;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -11,9 +13,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-public class NotificationView extends Activity {
+public class NotificationActivity extends Activity {
     @Override
-    public void onCreate(Bundle savedInstanceState){
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.notification);
 
@@ -25,7 +27,7 @@ public class NotificationView extends Activity {
 
         BufferedReader reader = null;
         try {
-            File file = new File(getFilesDir().getAbsolutePath().toString()+ File.separator+"vaccinereport"+ File.separator+"index.html");
+            File file = new File(getFilesDir().getAbsolutePath().toString() + File.separator + "vaccinereport" + File.separator + "index.html");
 
             reader = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 
