@@ -117,17 +117,7 @@ public class MyWorker extends Worker {
                 MainActivity.getInstance().updateJobCount(MainActivity.getInstance().workersCount(), null);
                 MainActivity.getInstance().updateSearchDetails(spUtil.getSharedPrefValueString(pinValueKey), spUtil.getSharedPrefValueString(districtNameKey), spUtil.getSharedPrefValueString(intervalValueKey));
 
-                if (loopCount > 1) {
-                    for (int j = 0; j < intervalNum * 10; j++) {
 
-                        if (isStopped()) {
-                            notificationManager.cancelAll();
-                            return Result.success();
-                        }
-
-                        Thread.sleep(100);
-                    }
-                }
 
                 String dataFilePath = covidDataService.checkVaccineAvailability(distID, pinValue, only18Plus, emailID);
                 if (dataFilePath.equals(CovidDataService.notAvailable)) {
@@ -143,6 +133,18 @@ public class MyWorker extends Worker {
                     spUtil.addOrUpdateSharedPrefLong(availableCountKey, availableCount);
                     spUtil.addOrUpdateSharedPrefBoolean(stateChnagedToAvailableKey, true);
                     setForegroundAsync(displayNotification("Vaccine Available!", "Vaccine booking slot(s) available, Click to know more!", notificationId));
+                }
+
+                if (loopCount > 1) {
+                    for (int j = 0; j < intervalNum * 10; j++) {
+
+                        if (isStopped()) {
+                            notificationManager.cancelAll();
+                            return Result.success();
+                        }
+
+                        Thread.sleep(100);
+                    }
                 }
             }
         } catch (Exception e) {
