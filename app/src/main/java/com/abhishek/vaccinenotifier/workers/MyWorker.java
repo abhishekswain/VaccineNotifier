@@ -57,6 +57,12 @@ public class MyWorker extends Worker {
     CovidDataService covidDataService;
     SharedPrefUtil spUtil;
 
+    public enum VACCINE_STATUS {
+        AVAILABLE,
+        NOT_AVAILABLE,
+        PENDING,
+    }
+
     public MyWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
 
         super(context, workerParams);
@@ -114,14 +120,12 @@ public class MyWorker extends Worker {
                 spUtil.addOrUpdateSharedPrefString(intervalValueKey, intervalValue);
                 spUtil.addOrUpdateSharedPrefString(districtNameKey, districtName);
 
-                MainActivity.getInstance().updateJobCount(MainActivity.getInstance().workersCount(), null);
                 MainActivity.getInstance().updateSearchDetails(spUtil.getSharedPrefValueString(pinValueKey), spUtil.getSharedPrefValueString(districtNameKey), spUtil.getSharedPrefValueString(intervalValueKey));
-
 
 
                 String dataFilePath = covidDataService.checkVaccineAvailability(distID, pinValue, only18Plus, emailID);
                 if (dataFilePath.equals(CovidDataService.notAvailable)) {
-
+                    numOfNotificationOnAvailability = 0;
                     notAvailableCount++;
                     spUtil.addOrUpdateSharedPrefLong(notAvailableCountKey, notAvailableCount);
                     spUtil.addOrUpdateSharedPrefBoolean(stateChnagedToAvailableKey, false);
@@ -134,6 +138,9 @@ public class MyWorker extends Worker {
                     spUtil.addOrUpdateSharedPrefBoolean(stateChnagedToAvailableKey, true);
                     setForegroundAsync(displayNotification("Vaccine Available!", "Vaccine booking slot(s) available, Click to know more!", notificationId));
                 }
+
+                MainActivity.getInstance().updateJobCountAndVaccineStatus(MainActivity.getInstance().workersCount(), null, spUtil.getSharedPrefValueBoolean(stateChnagedToAvailableKey) ? VACCINE_STATUS.AVAILABLE : VACCINE_STATUS.NOT_AVAILABLE);
+
 
                 if (loopCount > 1) {
                     for (int j = 0; j < intervalNum * 10; j++) {
@@ -158,18 +165,18 @@ public class MyWorker extends Worker {
 
     private ForegroundInfo displayNotification(String title, String text, int id) {
 
-        boolean isSilentUpdate = false;
+        boolean isSilentUpdate = true;
 
-        if ((spUtil.getSharedPrefValueLong(notAvailableCountKey) > 1)) {
-            isSilentUpdate = true;
-            numOfNotificationOnAvailability = 0;
+        if ((spUtil.getSharedPrefValueLong(notAvailableCountKey) <= 1)) {
+            isSilentUpdate = false;
         }
 
         if (spUtil.getSharedPrefValueBoolean(stateChnagedToAvailableKey)) {
-            if (numOfNotificationOnAvailability < numOfNotificationOnAvailabilityMax) {
-                isSilentUpdate = false;
-            } else {
+
+            if (numOfNotificationOnAvailability >= numOfNotificationOnAvailabilityMax) {
                 isSilentUpdate = true;
+            } else {
+                isSilentUpdate = false;
             }
 
             numOfNotificationOnAvailability++;

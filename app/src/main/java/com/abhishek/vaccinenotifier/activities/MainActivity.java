@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
 
                 WorkManager.getInstance(getInstance()).enqueueUniquePeriodicWork(workerTag, ExistingPeriodicWorkPolicy.REPLACE, periodicWorkRequest);
 
-                updateJobCount(workersCount(), null);
+                updateJobCountAndVaccineStatus(workersCount(), null, MyWorker.VACCINE_STATUS.PENDING);
                 updateSearchDetails(spUtil.getSharedPrefValueString(MyWorker.pinValueKey), spUtil.getSharedPrefValueString(MyWorker.districtNameKey), spUtil.getSharedPrefValueString(MyWorker.intervalValueKey));
 
             }
@@ -137,13 +137,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            updateJobCount(workersCount(), null);
-        } catch (ExecutionException e) {
+            updateJobCountAndVaccineStatus(workersCount(), null, MyWorker.VACCINE_STATUS.PENDING);
+        } catch (Exception e) {
             e.printStackTrace();
-            updateJobCount(0, "Error!");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            updateJobCount(0, "Error!");
+            updateJobCountAndVaccineStatus(0, "Error!", MyWorker.VACCINE_STATUS.PENDING);
         }
 
         stopJobsButton.setOnClickListener(new View.OnClickListener() {
@@ -159,10 +156,8 @@ public class MainActivity extends AppCompatActivity {
                 searchDetails.setText("No search active");
 
                 try {
-                    updateJobCount(workersCount(), null);
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
+                    updateJobCountAndVaccineStatus(workersCount(), null, MyWorker.VACCINE_STATUS.PENDING);
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -198,7 +193,8 @@ public class MainActivity extends AppCompatActivity {
         cleanData();
     }
 
-    public void updateJobCount(int count, String message) {
+    public void updateJobCountAndVaccineStatus(int count, String message, MyWorker.VACCINE_STATUS vStatus) {
+
         if (null != message) {
             checkStatus.setText("Jobs Running: " + message);
         } else {
@@ -207,7 +203,13 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
 
-                    checkStatus.setText("Jobs Running: " + count + "\nI have checked for " + spUtil.getSharedPrefValueLong(MyWorker.tryCountKey) + " times since you've scheduled me.");
+                    String text = "Jobs Running: " + count + " | Polled " + spUtil.getSharedPrefValueLong(MyWorker.tryCountKey) + " times.";
+
+                    if (vStatus != MyWorker.VACCINE_STATUS.PENDING) {
+                        String availabilityStatus = (vStatus == MyWorker.VACCINE_STATUS.AVAILABLE) ? "Available" : "Not Available";
+                        text = text = "Jobs Running: " + count + " | Polled " + spUtil.getSharedPrefValueLong(MyWorker.tryCountKey) + " times.\nAvailability Status:" + availabilityStatus;
+                    }
+                    checkStatus.setText(text);
 
                 }
             });
