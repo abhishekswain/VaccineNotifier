@@ -141,7 +141,21 @@ public class MyWorker extends Worker {
                 }
 
                 VACCINE_STATUS vaccineStatus = covidDataService.checkVaccineAvailability(distID, pinValue, only18Plus, emailID);
-                if (vaccineStatus == VACCINE_STATUS.NOT_AVAILABLE || vaccineStatus == VACCINE_STATUS.ERROR) {
+
+                if(vaccineStatus == VACCINE_STATUS.ERROR){
+
+                    if (null != MainActivity.getInstance()) {
+                        MainActivity.getInstance().updateJobCountAndVaccineStatus(MainActivity.getInstance().workersCount(), null, VACCINE_STATUS.ERROR);
+                    }
+                    Result resultWait = waitAndWatch(loopCount, intervalNum);
+                    if (null != resultWait) {
+                        return resultWait;
+                    }
+
+                    continue;
+                }
+
+                if (vaccineStatus == VACCINE_STATUS.NOT_AVAILABLE) {
                     numOfNotificationOnAvailability = 0;
                     notAvailableCount++;
                     spUtil.addOrUpdateSharedPrefLong(notAvailableCountKey, notAvailableCount);
@@ -157,23 +171,14 @@ public class MyWorker extends Worker {
                 }
 
                 if (null != MainActivity.getInstance()) {
-                    if (vaccineStatus == VACCINE_STATUS.ERROR) {
-                        MainActivity.getInstance().updateJobCountAndVaccineStatus(MainActivity.getInstance().workersCount(), null, spUtil.getSharedPrefValueBoolean(stateChnagedToAvailableKey) ? VACCINE_STATUS.AVAILABLE : VACCINE_STATUS.NOT_AVAILABLE);
-                    }
                     MainActivity.getInstance().updateJobCountAndVaccineStatus(MainActivity.getInstance().workersCount(), null, spUtil.getSharedPrefValueBoolean(stateChnagedToAvailableKey) ? VACCINE_STATUS.AVAILABLE : VACCINE_STATUS.NOT_AVAILABLE);
                 }
 
-                if (loopCount > 1) {
-                    for (int j = 0; j < intervalNum * 10; j++) {
-
-                        if (isStopped()) {
-                            notificationManager.cancelAll();
-                            return Result.success();
-                        }
-
-                        Thread.sleep(100);
-                    }
+                Result resultWait = waitAndWatch(loopCount,intervalNum);
+                if(null != resultWait){
+                    return resultWait;
                 }
+
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -183,6 +188,22 @@ public class MyWorker extends Worker {
         startOrrestartWorker(spUtil);
 
         return Result.success();
+    }
+
+    public Result waitAndWatch(int loopCount, int intervalNum) throws InterruptedException {
+
+        if (loopCount > 1) {
+            for (int j = 0; j < intervalNum * 10; j++) {
+
+                if (isStopped()) {
+                    notificationManager.cancelAll();
+                    return Result.success();
+                }
+
+                Thread.sleep(100);
+            }
+        }
+        return null;
     }
 
 
@@ -220,6 +241,7 @@ public class MyWorker extends Worker {
         Intent notificationIntent = new Intent(mContext, NotificationActivity.class);
         PendingIntent conPendingIntent = PendingIntent.getActivity(mContext, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+        text = text + " (count: " + spUtil.getSharedPrefValueLong(tryCountKey) + ")";
         notificationBuilder.setAutoCancel(false)
                 .setSilent(isSilentUpdate)
                 //.setDefaults(Notification.DEFAULT_ALL)
@@ -229,8 +251,9 @@ public class MyWorker extends Worker {
                         R.mipmap.ic_launcher))
                 .setTicker("VaccineNotifier")
                 .setPriority(Notification.PRIORITY_MAX)
-                .setContentTitle(title + "  (Poll count:" + spUtil.getSharedPrefValueLong(tryCountKey) + ")")
+                .setContentTitle(title)
                 .setContentText(text)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
                 .setContentInfo("VaccineNotifier")
                 .setOngoing(true)
                 .setContentIntent(conPendingIntent);
