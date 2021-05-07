@@ -9,6 +9,7 @@ import androidx.annotation.RequiresApi;
 
 import com.abhishek.vaccinenotifier.utils.GMailSender;
 import com.abhishek.vaccinenotifier.utils.JSONTOHTML;
+import com.abhishek.vaccinenotifier.workers.MyWorker;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,6 +37,7 @@ public class CovidDataService {
     String htmlFileName = "index.html";
     String filePath;
     SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
+    HttpURLConnection urlConnection;
 
     Context mContext;
 
@@ -47,58 +49,52 @@ public class CovidDataService {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public String checkVaccineAvailability(String distID, String pinValue, String only18Plus, String emailID) {
-
-        available = new JSONArray();
-        boolean isOnly18Plus = Boolean.parseBoolean(only18Plus);
+    public MyWorker.VACCINE_STATUS checkVaccineAvailability(String distID, String pinValue, String only18Plus, String emailID) {
 
         try {
-
-            Date date = new Date();
-
+            available = new JSONArray();
+            JSONArray centersArray = new JSONArray();
+            boolean isOnly18Plus = Boolean.parseBoolean(only18Plus);
             String byPin = "calendarByPin?pincode=" + pinValue;
             String byDistrict = "calendarByDistrict?district_id=" + distID;
 
-            String finalURL = (String.valueOf(pinValue).length() == 6) ? (baseURL + byPin) : (baseURL + byDistrict);
+            String result = null;
+            URL url;
+            InputStream in;
 
-            // convert date to calendar
+            Date date = new Date();
             Calendar c = Calendar.getInstance();
             c.setTime(date);
 
-            String result = null;
+            String finalURL = (String.valueOf(pinValue).length() == 6) ? (baseURL + byPin) : (baseURL + byDistrict);
 
-            URL url = new URL(finalURL + "&date=" + formatter.format(c.getTime()));
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+            for (int j = 0; j < 3; j++) {
 
-            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-            result = inputStreamToString(in);
-            JSONArray centersArray = new JSONObject(result).getJSONArray("centers");
+                if (j != 0) {
+                    c.add(Calendar.DATE, +7);
+                }
 
-            // manipulate date
-            c.add(Calendar.DATE, +7);
+                url = new URL(finalURL + "&date=" + formatter.format(c.getTime()));
 
-            url = new URL(finalURL + "&date=" + formatter.format(c.getTime()));
-            urlConnection = (HttpURLConnection) url.openConnection();
+                try {
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    if (urlConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                        writeNotAvailableHtmlFile();
+                        return MyWorker.VACCINE_STATUS.ERROR;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    writeNotAvailableHtmlFile();
+                    return MyWorker.VACCINE_STATUS.ERROR;
+                }
 
-            in = new BufferedInputStream(urlConnection.getInputStream());
-            result = inputStreamToString(in);
-            for (int i = 0; i < new JSONObject(result).getJSONArray("centers").length(); i++) {
-                centersArray.put(new JSONObject(result).getJSONArray("centers").getJSONObject(i));
+                in = new BufferedInputStream(urlConnection.getInputStream());
+                result = inputStreamToString(in);
+
+                for (int i = 0; i < new JSONObject(result).getJSONArray("centers").length(); i++) {
+                    centersArray.put(new JSONObject(result).getJSONArray("centers").getJSONObject(i));
+                }
             }
-
-            c.add(Calendar.DATE, +7);
-
-            url = new URL(finalURL + "&date=" + formatter.format(c.getTime()));
-            urlConnection = (HttpURLConnection) url.openConnection();
-
-            in = new BufferedInputStream(urlConnection.getInputStream());
-            result = inputStreamToString(in);
-
-
-            for (int i = 0; i < new JSONObject(result).getJSONArray("centers").length(); i++) {
-                centersArray.put(new JSONObject(result).getJSONArray("centers").getJSONObject(i));
-            }
-
 
             JSONArray jsonArray = centersArray;
 
@@ -139,17 +135,18 @@ public class CovidDataService {
             if (available.length() > 0) {
                 isSuccess = writeAvailabilityHtmlFileToDirectory(available, directoryPath, htmlFileName);
                 if (isSuccess) {
-                    return filePath;
+                    return MyWorker.VACCINE_STATUS.AVAILABLE;
                 }
             }
 
         } catch (Exception e) {
             e.printStackTrace();
+            writeNotAvailableHtmlFile();
+            return MyWorker.VACCINE_STATUS.ERROR;
         }
-        deleteFile(directoryPath, htmlFileName);
-        writeFileOnInternalStorage(directoryPath, htmlFileName, " <html><head></head><style>.json_object { margin:10px; padding-left:10px; border-left:1px solid #ccc}.json_key { font-weight: bold; }" +
-                "</style>" + "<div><b>No vaccine slots available yet for you selection. Your notification content will be updated when vaccine slots are made available.<b></div>" + "</head></html>");
-        return notAvailable;
+
+        writeNotAvailableHtmlFile();
+        return MyWorker.VACCINE_STATUS.NOT_AVAILABLE;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -177,6 +174,14 @@ public class CovidDataService {
             Log.e("SendMail", e.getMessage(), e);
             Toast.makeText(mContext, "Email Notification Failed!", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void writeNotAvailableHtmlFile() {
+
+        deleteFile(directoryPath, htmlFileName);
+        writeFileOnInternalStorage(directoryPath, htmlFileName, " <html><head></head><style>.json_object { margin:10px; padding-left:10px; border-left:1px solid #ccc}.json_key { font-weight: bold; }" +
+                "</style>" + "<div><b>No vaccine slots available yet for you selection. Your notification content will be updated when vaccine slots are made available.<b></div>" + "</head></html>");
+
     }
 
     private String inputStreamToString(InputStream is) {

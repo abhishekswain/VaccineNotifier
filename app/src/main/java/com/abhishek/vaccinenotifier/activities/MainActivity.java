@@ -12,12 +12,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.work.BackoffPolicy;
-import androidx.work.Constraints;
-import androidx.work.Data;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.NetworkType;
-import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
@@ -27,7 +21,6 @@ import com.abhishek.vaccinenotifier.workers.MyWorker;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,8 +29,7 @@ public class MainActivity extends AppCompatActivity {
     TextView searchDetails;
     Button stopJobsButton;
     TextView moreInfo;
-    String workerTag = "vaccine";
-    String defaultPin = "123";
+
     public static String mpinValue;
     public static String distName;
     public static String interval;
@@ -77,48 +69,25 @@ public class MainActivity extends AppCompatActivity {
             @JavascriptInterface
             public void performClick(String distID, String emailID, String pinValue, String only18Plus, String intervalValue, String districtName) throws ExecutionException, InterruptedException {
 
-                long intervalInLong = Long.parseLong(intervalValue);
-                if (intervalInLong <= 1800) {
-                    intervalInLong = 1800;
-                }
-
                 cancelAllWorkers();
 
                 mpinValue = pinValue;
                 if (null == pinValue || pinValue.toString().equals("")) {
-                    mpinValue = defaultPin;
+                    mpinValue = MyWorker.defaultPin;
                 }
 
                 distName = districtName;
                 interval = intervalValue;
 
-                //creating a data object
-                //to pass the data with workRequest
-                //we can put as many variables needed
-                Data inputData = new Data.Builder()
-                        .putString(MyWorker.distIDKey, distID)
-                        .putString(MyWorker.emailIDKey, emailID)
-                        .putString(MyWorker.pinValueKey, mpinValue)
-                        .putString(MyWorker.only18PlusKey, only18Plus)
-                        .putString(MyWorker.intervalValueKey, intervalValue)
-                        .putString(MyWorker.districtNameKey, districtName)
-                        .putInt(MyWorker.notificationIDKey, 1)
-                        .build();
+                spUtil.addOrUpdateSharedPrefString(MyWorker.distIDKey, distID);
+                spUtil.addOrUpdateSharedPrefString(MyWorker.emailIDKey, emailID);
+                spUtil.addOrUpdateSharedPrefString(MyWorker.pinValueKey, mpinValue);
+                spUtil.addOrUpdateSharedPrefString(MyWorker.only18PlusKey, only18Plus);
+                spUtil.addOrUpdateSharedPrefString(MyWorker.intervalValueKey, intervalValue);
+                spUtil.addOrUpdateSharedPrefString(MyWorker.districtNameKey, districtName);
+                spUtil.addOrUpdateSharedPrefLong(MyWorker.notificationIDKey, 1);
 
-                Constraints constraints = new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build();
-
-                PeriodicWorkRequest periodicWorkRequest
-                        = new PeriodicWorkRequest.Builder(MyWorker.class, intervalInLong, TimeUnit.SECONDS)
-                        .setInputData(inputData)
-                        .setConstraints(constraints)
-                        .addTag(workerTag)
-                        // setting a backoff on case the work needs to retry
-                        //PeriodicWorkRequest.MIN_BACKOFF_MILLIS
-                        .setBackoffCriteria(BackoffPolicy.LINEAR, 30, TimeUnit.SECONDS)
-                        //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                        .build();
-
-                WorkManager.getInstance(getInstance()).enqueueUniquePeriodicWork(workerTag, ExistingPeriodicWorkPolicy.REPLACE, periodicWorkRequest);
+                MyWorker.startOrrestartWorker(spUtil);
 
                 updateJobCountAndVaccineStatus(workersCount(), null, MyWorker.VACCINE_STATUS.PENDING);
                 updateSearchDetails(spUtil.getSharedPrefValueString(MyWorker.pinValueKey), spUtil.getSharedPrefValueString(MyWorker.districtNameKey), spUtil.getSharedPrefValueString(MyWorker.intervalValueKey));
@@ -168,6 +137,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
+
     }
 
     @Override
@@ -207,7 +178,8 @@ public class MainActivity extends AppCompatActivity {
 
                     if (vStatus != MyWorker.VACCINE_STATUS.PENDING) {
                         String availabilityStatus = (vStatus == MyWorker.VACCINE_STATUS.AVAILABLE) ? "Available" : "Not Available";
-                        text = text = "Jobs Running: " + count + " | Polled " + spUtil.getSharedPrefValueLong(MyWorker.tryCountKey) + " times.\nAvailability Status:" + availabilityStatus;
+                        availabilityStatus = (vStatus == MyWorker.VACCINE_STATUS.ERROR) ? "Error" : availabilityStatus;
+                        text = "Jobs Running: " + count + " | Polled " + spUtil.getSharedPrefValueLong(MyWorker.tryCountKey) + " times.\nAvailability Status:" + availabilityStatus;
                     }
                     checkStatus.setText(text);
 
@@ -229,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
                 text = (null == spUtil.getSharedPrefValueString(MyWorker.intervalValueKey)) ? "Search active for " + temp + ", Interval: 'Updating..'" : "Search active for " + temp + ", Interval: " + interval + " seconds";
             }
         } else {
-            text = defaultPin.equals(pin) ? "District: " + dist : "PIN: " + pin;
+            text = MyWorker.defaultPin.equals(pin) ? "District: " + dist : "PIN: " + pin;
             text = "Search active for " + text + ", Interval: " + interval + " seconds";
         }
 
