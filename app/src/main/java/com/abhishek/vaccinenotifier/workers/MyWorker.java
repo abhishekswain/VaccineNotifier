@@ -147,7 +147,7 @@ public class MyWorker extends Worker {
                     if (null != MainActivity.getInstance()) {
                         MainActivity.getInstance().updateJobCountAndVaccineStatus(MainActivity.getInstance().workersCount(), null, VACCINE_STATUS.ERROR);
                     }
-                    Result resultWait = waitAndWatch(loopCount, intervalNum);
+                    Result resultWait = waitAndWatch( intervalNum);
                     if (null != resultWait) {
                         return resultWait;
                     }
@@ -174,7 +174,7 @@ public class MyWorker extends Worker {
                     MainActivity.getInstance().updateJobCountAndVaccineStatus(MainActivity.getInstance().workersCount(), null, spUtil.getSharedPrefValueBoolean(stateChnagedToAvailableKey) ? VACCINE_STATUS.AVAILABLE : VACCINE_STATUS.NOT_AVAILABLE);
                 }
 
-                Result resultWait = waitAndWatch(loopCount,intervalNum);
+                Result resultWait = waitAndWatch(intervalNum);
                 if(null != resultWait){
                     return resultWait;
                 }
@@ -190,9 +190,9 @@ public class MyWorker extends Worker {
         return Result.success();
     }
 
-    public Result waitAndWatch(int loopCount, int intervalNum) throws InterruptedException {
+    public Result waitAndWatch( int intervalNum) throws InterruptedException {
 
-        if (loopCount > 1) {
+
             for (int j = 0; j < intervalNum * 10; j++) {
 
                 if (isStopped()) {
@@ -202,7 +202,6 @@ public class MyWorker extends Worker {
 
                 Thread.sleep(100);
             }
-        }
         return null;
     }
 
