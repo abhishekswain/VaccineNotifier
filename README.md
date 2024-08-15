@@ -3,3 +3,5 @@ An android application which gives an app notification when booking slots are ma
 
 # Usage
 Import this project to Android Studio
+
+This project is tested with BrowserStack
